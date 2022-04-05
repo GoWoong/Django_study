@@ -1,7 +1,10 @@
 from django.shortcuts import redirect, render, get_object_or_404
+from django.core.paginator import Paginator
+from django.views.generic import CreateView
+from django.urls import reverse
+
 from posts.forms import PostForm
 from posts.models import Post
-from django.core.paginator import Paginator
 # Create your views here.
 
 def post_list(request):
@@ -18,16 +21,37 @@ def post_detail(request, post_id):
   context = {"post":post}
   return render(request, 'posts/post_detail.html',context)
 
-def post_create(request):
-  if request.method == "POST":
-    post_form = PostForm(request.POST)
-    if post_form.is_valid():
-      new_post = post_form.save()
-      return redirect('post-detail', post_id = new_post.id)
-  else:
-    post_form = PostForm()
-  return render(request,'posts/post_form.html',context = {"form":post_form})
+# 일반적인 함수형 뷰
+# def post_create(request):
+#   if request.method == "POST":
+#     post_form = PostForm(request.POST)
+#     if post_form.is_valid():
+#       new_post = post_form.save()
+#       return redirect('post-detail', post_id = new_post.id)
+#   else:
+#     post_form = PostForm()
+#   return render(request,'posts/post_form.html',context = {"form":post_form})
   
+# 클래스 뷰
+# class PostCreateView(View):
+#   def get(self, request):
+#     post_form = PostForm()
+#     return render(request,'posts/post_form.html',{"form":post_form})
+#   def post(self, request):
+#     post_form = PostForm(request.POST)
+#     if post_form.is_valid():
+#         new_post = post_form.save()
+#         return redirect('post-detail', post_id=new_post.id)
+#     return render(request, 'posts/post_form.html', {'form': post_form})
+
+# 제네릭 뷰
+class PostCreateView(CreateView):
+  model = Post
+  form_class = PostForm
+  template_name = 'posts/post_form.html'
+  def get_success_url(self):
+    return reverse('post-detail',kwargs={'post_id':self.object.id})
+
 
 def post_update(request, post_id):
   post = get_object_or_404(Post, id=post_id)
